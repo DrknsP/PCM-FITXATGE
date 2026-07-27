@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#333333" />
+  <title>PCM Fruits · Fitxatge</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="app-shell">
+    <header class="brand-card">
+      <img src="assets/logo-pcm.png" alt="PCM Fruits" class="brand-logo" />
+      <div class="brand-copy">
+        <span class="eyebrow">PCM Fruits</span>
+        <h1>FITXATGE</h1>
+        <p>Control d'entrada i sortida del personal</p>
+      </div>
+    </header>
+
+    <section class="status-card" id="connectionCard">
+      <span class="status-dot" id="connectionDot"></span>
+      <span id="connectionText">Comprovant connexió amb Supabase...</span>
+    </section>
+
+    <section class="clock-card">
+      <p id="currentDate">—</p>
+      <strong id="currentTime">--:--:--</strong>
+    </section>
+
+    <section class="fichatge-card">
+      <label for="employeeCode">Codi de treballador</label>
+      <input id="employeeCode" type="password" inputmode="numeric" autocomplete="off" maxlength="12" placeholder="Introdueix el teu codi" />
+      <div class="actions">
+        <button type="button" class="btn btn-entry" id="entryBtn"><span>Entrada</span><small>Iniciar jornada</small></button>
+        <button type="button" class="btn btn-exit" id="exitBtn"><span>Sortida</span><small>Finalitzar jornada</small></button>
+      </div>
+      <p class="privacy-note">El codi s'utilitza només per identificar el treballador i no es mostra a la pantalla.</p>
+    </section>
+
+    <section class="result-card hidden" id="resultCard" aria-live="polite">
+      <div class="result-icon" id="resultIcon">✓</div>
+      <div><strong id="resultTitle">Fitxatge registrat</strong><p id="resultText"></p></div>
+    </section>
+
+    <section class="admin-card">
+      <details>
+        <summary>Accés d'administració</summary>
+        <div class="admin-login" id="adminLogin">
+          <input id="adminEmail" type="email" autocomplete="username" placeholder="Correu d'administrador" />
+          <input id="adminPassword" type="password" autocomplete="current-password" placeholder="Contrasenya" />
+          <button type="button" class="btn btn-admin" id="adminLoginBtn">Entrar</button>
+        </div>
+
+        <div class="admin-panel hidden" id="adminPanel">
+          <div class="admin-toolbar">
+            <div><strong>Panell d'administració</strong><p id="adminUser"></p></div>
+            <div class="toolbar-actions">
+              <button type="button" class="secondary-btn" id="refreshBtn">Actualitzar</button>
+              <button type="button" class="secondary-btn danger" id="logoutBtn">Sortir</button>
+            </div>
+          </div>
+
+          <div class="admin-section">
+            <div class="section-heading">
+              <div><h2>Fitxatges</h2><p>Filtra per treballador, mes, dia o tipus.</p></div>
+              <span class="record-count" id="recordCount">0 registres</span>
+            </div>
+
+            <div class="filters-grid">
+              <label>Buscar treballador
+                <input id="employeeSearch" type="search" placeholder="Nom o codi" />
+              </label>
+              <label>Treballador
+                <select id="employeeFilter"><option value="">Tots els empleats</option></select>
+              </label>
+              <label>Mes
+                <input id="monthFilter" type="month" />
+              </label>
+              <label>Dia del mes
+                <select id="dayFilter"><option value="">Tots els dies</option></select>
+              </label>
+              <label>Tipus
+                <select id="typeFilter"><option value="">Entrada i sortida</option><option value="entrada">Entrada</option><option value="sortida">Sortida</option></select>
+              </label>
+              <div class="filter-actions">
+                <button type="button" class="secondary-btn" id="clearFiltersBtn">Netejar filtres</button>
+              </div>
+            </div>
+
+            <section class="employee-month-summary" id="employeeMonthSummary">
+              <div class="summary-placeholder" id="summaryPlaceholder">
+                Selecciona un treballador per veure les hores totals i el calendari del mes.
+              </div>
+              <div class="summary-content hidden" id="summaryContent">
+                <div class="summary-header">
+                  <div>
+                    <span class="summary-label">Resum del treballador</span>
+                    <h3 id="summaryEmployeeName">—</h3>
+                    <p id="summaryMonthLabel">—</p>
+                  </div>
+                  <div class="total-hours-card">
+                    <span>Hores totals del mes</span>
+                    <strong id="summaryTotalHours">0 h 00 min</strong>
+                    <small id="summaryWorkedDays">0 dies treballats</small>
+                  </div>
+                </div>
+
+                <div class="calendar-card">
+                  <div class="calendar-weekdays" aria-hidden="true">
+                    <span>Dl</span><span>Dt</span><span>Dc</span><span>Dj</span><span>Dv</span><span>Ds</span><span>Dg</span>
+                  </div>
+                  <div class="calendar-grid" id="workCalendar"></div>
+                  <div class="calendar-legend"><span class="legend-dot"></span> Dia amb fitxatge</div>
+                </div>
+
+                <div class="daily-summary-wrap">
+                  <h3>Detall d'hores per dia</h3>
+                  <div class="table-wrap">
+                    <table class="daily-summary-table mobile-stack-table">
+                      <thead><tr><th>Dia</th><th>Primera entrada</th><th>Última sortida</th><th>Hores</th><th>Fitxatges</th></tr></thead>
+                      <tbody id="dailySummaryBody"></tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <div class="export-bar">
+              <button type="button" class="secondary-btn primary-action" id="exportBtn">Exportar fitxatges filtrats</button>
+              <button type="button" class="secondary-btn" id="exportSummaryBtn">Exportar resum diari del mes</button>
+            </div>
+
+            <div class="table-wrap">
+              <table class="records-table mobile-stack-table">
+                <thead><tr><th>Data</th><th>Hora</th><th>Treballador</th><th>Codi</th><th>Tipus</th></tr></thead>
+                <tbody id="recordsBody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="admin-section">
+            <div class="section-heading">
+              <div><h2>Gestió d'empleats</h2><p>Crea, edita, activa o desactiva treballadors.</p></div>
+              <div class="status-filters">
+                <button type="button" class="chip active" data-status="all">Tots</button>
+                <button type="button" class="chip" data-status="active">Actius</button>
+                <button type="button" class="chip" data-status="inactive">Inactius</button>
+              </div>
+            </div>
+
+            <form class="employee-form" id="employeeForm">
+              <input type="hidden" id="editingEmployeeId" />
+              <label>Nom i cognoms
+                <input id="employeeName" type="text" maxlength="100" placeholder="Ex. Joan Garcia" required />
+              </label>
+              <label>Codi de fitxatge
+                <input id="employeeAdminCode" type="text" inputmode="numeric" maxlength="12" placeholder="Ex. 1001" required />
+              </label>
+              <label>Estat
+                <select id="employeeActive">
+                  <option value="true">Actiu</option>
+                  <option value="false">Inactiu</option>
+                </select>
+              </label>
+              <div class="employee-form-actions">
+                <button type="submit" class="secondary-btn primary-action" id="saveEmployeeBtn">Crear empleat</button>
+                <button type="button" class="secondary-btn hidden" id="cancelEditEmployeeBtn">Cancel·lar edició</button>
+              </div>
+            </form>
+
+            <div class="employee-list-toolbar">
+              <label>Buscar a la llista
+                <input id="employeeListSearch" type="search" placeholder="Nom o codi" />
+              </label>
+              <label>Ordenar per
+                <select id="employeeSort">
+                  <option value="id-asc">ID: menor a major</option>
+                  <option value="id-desc">ID: major a menor</option>
+                  <option value="name-asc">Nom: A–Z</option>
+                  <option value="name-desc">Nom: Z–A</option>
+                </select>
+              </label>
+              <span class="record-count" id="employeeCount">0 empleats</span>
+            </div>
+
+            <div class="table-wrap">
+              <table class="employees-table mobile-stack-table">
+                <thead><tr><th>Nom</th><th>Codi</th><th>Estat</th><th>Alta</th><th>Accions</th></tr></thead>
+                <tbody id="employeesBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </details>
+    </section>
+
+    <footer>PCM Fruits · Sistema de fitxatge</footer>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="app.js"></script>
+</body>
+</html>
